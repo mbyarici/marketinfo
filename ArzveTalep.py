@@ -59,7 +59,8 @@ def loading(date1):
     return suplydemand#,diff_pv        
 
 #%%
-print("push")      
+print("push") 
+print("pushtry2")     
 date1 = st.date_input('Baz gün',value=date.today())
 date1=str(date1)
 
@@ -86,8 +87,6 @@ st.title("Değişim değerleri girebilirsiniz. Arzı artırmak için :(-): / Tal
 
 edited_df = st.data_editor(default)
 edited_df=edited_df.fillna(0)
-
-
 
 def intersection(hour_data):   
     hour_data=hour_data.reset_index(drop=True)

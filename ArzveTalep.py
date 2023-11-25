@@ -59,7 +59,7 @@ def loading(date1):
     return suplydemand#,diff_pv        
 
 #%%
-      
+print("push")      
 date1 = st.date_input('Baz gün',value=date.today())
 date1=str(date1)
 

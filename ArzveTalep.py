@@ -21,9 +21,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score
 from sklearn.linear_model import LinearRegression
 import requests as req
-
-
-
+import pytz
 
 #%%sayfa düzeni
 hide_st_style = """
@@ -37,15 +35,28 @@ st.set_page_config(page_title="Arz -Talep", page_icon=":chart_with_upwards_trend
 
 st.markdown(hide_st_style, unsafe_allow_html=True)
 
-
+print("push") 
 #%%arz talep cash
 @st.cache_data  # Allow caching DataFrame
 def loading(date1):
 
-    suplydemand_url= "https://seffaflik.epias.com.tr/transparency/service/market/supply-demand-curve"
+    suplydemand_url= "https://seffaflik.epias.com.tr/electricity-service/v1/markets/dam/data/supply-demand"
     try:
-        resp1 = req.get(suplydemand_url,params={"period":date1})
-        suplydemand=pd.DataFrame(resp1.json()["body"]["supplyDemandCurves"])
+        suplydemand = pd.DataFrame()
+        
+        for hour in range(24):
+
+            print(hour)
+            current_datetime = date1.replace(hour=hour)
+            current_datetime = current_datetime.strftime("%Y-%m-%dT%H:%M:%S%z")
+            current_datetime = current_datetime[:19] + current_datetime[-5:-2] + ":" + current_datetime[-2:]
+            
+            
+            payload = {"date": current_datetime}
+            resp1 = req.post(suplydemand_url,json=payload, headers=headers, timeout=15)
+            hourdata=pd.DataFrame(resp1.json()["items"])
+            suplydemand = pd.concat([suplydemand, hourdata], ignore_index=True)
+
         suplydemand["date"]=pd.to_datetime(suplydemand["date"].str[0:-3], format='%Y-%m-%dT%H:%M:%S.%f')
         suplydemand["date"]=suplydemand["date"].dt.tz_localize(None)
         suplydemand['hour']=suplydemand["date"].apply(lambda x:x.hour)
@@ -59,10 +70,56 @@ def loading(date1):
     return suplydemand#,diff_pv        
 
 #%%
+
 print("push") 
-print("pushtry2")     
+ 
 date1 = st.date_input('Baz gün',value=date.today())
-date1=str(date1)
+print(date1)
+
+
+# Create a datetime object with the selected date and desired time (00:00:00)
+selected_datetime = datetime.datetime(date1.year, date1.month, date1.day, 0, 0, 0)
+
+# Get your local time zone (Istanbul)
+local_timezone = pytz.timezone('Europe/Istanbul')
+
+# Convert the datetime object to your local time zone (optional)
+date1 = selected_datetime.astimezone(local_timezone)
+
+# Format the date string with time zone offset
+#date1 = selected_datetime_local.strftime("%Y-%m-%dT%H:%M:%S%z")
+#date1 = date1[:19] + date1[-5:-2] + ":" + date1[-2:]
+
+print(date1)
+
+#%%
+auth_url = "https://giris.epias.com.tr/cas/v1/tickets"  # TGT almak için kullanacağınız URL
+auth_payload = "username=mustafayarici@embaenergy.com&password=Seffaf.3406"
+auth_headers = {"Content-Type": "application/x-www-form-urlencoded","Accept": "text/plain"}
+
+# TGT isteğini yap
+try:
+    auth_response = req.post(auth_url, data=auth_payload, headers=auth_headers)
+    auth_response.raise_for_status()  # Eğer istek başarısız olursa hata fırlatır
+    tgt = auth_response.text  # TGT'yi yanıt metninden al
+    print("TGT : başarılı")
+except Exception as e:
+    print("TGT alma hatası:", e)
+    tgt = None  # TGT alınamazsa devam edemeyiz  
+
+
+payload = {
+        "date": date1,
+    }
+headers = {
+        "TGT": tgt,  # Aldığımız TGT burada kullanılıyor
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+
+
+
+#%%
 
 # Cache teki arz talebi değiştir. 
 suplydemand = loading(date1)#,diff_pv        
@@ -79,7 +136,7 @@ num_rows = (len(unique_hours) - 1) // num_cols + 1
 suplydemand["kesisim"] = suplydemand["kesisim"].round(6)
 result_df = pd.DataFrame(columns=["Saat", "Fiyat"])
 asgari=0
-azami=2700
+azami=3000
 
 default_columns = [f"saat{i}" for i in range(24)]
 default = pd.DataFrame(0, index=range(1), columns=default_columns)
@@ -137,7 +194,12 @@ for row in range(num_rows):
             hour_data = suplydemand[suplydemand["hour"] == hour]
             
             intersection_price,hour_data=intersection(hour_data)
-            ptf_df = ptf_df.append({"Saat": hour, "Fiyat": intersection_price}, ignore_index=True)
+            
+            
+            new_row = pd.DataFrame({"Saat": [hour], "Fiyat": [intersection_price]})
+            ptf_df = pd.concat([ptf_df, new_row], ignore_index=True)
+            
+            #ptf_df = ptf_df.append({"Saat": hour, "Fiyat": intersection_price}, ignore_index=True)
             with cols[col_idx]:
                 fig = go.Figure()
                 fig.add_trace(go.Scatter(x=hour_data["kesisim"], y=hour_data["price"], mode="lines", name=f"Saat {hour}"))
@@ -170,7 +232,4 @@ st.download_button(
 )
 
 
-
-
-#
 

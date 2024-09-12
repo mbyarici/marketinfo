@@ -96,7 +96,7 @@ def loading(date1,date2):
                             print(str(i)+" başarılı"+ "deneme5")
                             sleep(1)
                         except:
-                            print(str(i)+" hatalı kgüp")
+                            print(str(i)+" hatalı eak")
                             sleep(1)
                             pass
     
@@ -106,6 +106,7 @@ def loading(date1,date2):
             temp_eak=temp_eak.merge(temporg, how='left',on=['organizationId'])
             eak=pd.concat([eak, temp_eak])
         print(str(i)+" eak")
+        st.info(eak.head(3))
         sleep(1)  
     return eak#,diff_pv      
 

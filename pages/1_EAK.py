@@ -221,7 +221,7 @@ for i in eaklist['organizationId']:
 eak = loading(date1,date2)
 
 
-
+st.dataframe(eak.head(5),height=600,use_container_width=True)
 
 #%%
 

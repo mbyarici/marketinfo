@@ -22,6 +22,7 @@ from sklearn.metrics import r2_score
 from sklearn.linear_model import LinearRegression
 import requests as req
 import pytz
+from time import sleep
 
 #%%sayfa düzeni
 hide_st_style = """
@@ -110,7 +111,7 @@ except Exception as e:
 
 payload = {
         "date": date1,
-    }
+    }#kullanılmayan
 headers = {
         "TGT": tgt,  # Aldığımız TGT burada kullanılıyor
         "Content-Type": "application/json",

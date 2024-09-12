@@ -42,7 +42,7 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 
 
 
-"""
+
 
 #%%cash
 @st.cache_data  # Allow caching DataFrame
@@ -51,6 +51,7 @@ def loading(date1,date2):
     print("döngü")
     eak=pd.DataFrame()
     for i in eaklist['organizationId']:
+        st.write(date1," - ",date2)
         temporg=eaklist[eaklist['organizationId']==i]
         
         payload = {
@@ -106,11 +107,11 @@ def loading(date1,date2):
             temp_eak=temp_eak.merge(temporg, how='left',on=['organizationId'])
             eak=pd.concat([eak, temp_eak])
         print(str(i)+" eak")
-        st.info(eak.head(3))
+        st.write(eak.head(3))
         sleep(1)  
     return eak#,diff_pv      
 
-"""
+
 
 #%%tgt
 auth_url = "https://giris.epias.com.tr/cas/v1/tickets"  # TGT almak için kullanacağınız URL
@@ -153,7 +154,7 @@ date2=date2.replace(hour=0)
 date2 = date2.strftime("%Y-%m-%dT%H:%M:%S%z")
 date2 = date2[:19] + date2[-5:-2] + ":" + date2[-2:]
 
-
+"""
 #%%
 print("döngü")
 eak=pd.DataFrame()
@@ -219,10 +220,10 @@ for i in eaklist['organizationId']:
     st.info(eak.head(3))
     sleep(1)
 
+"""
 
 
-
-#eak = loading(date1,date2)
+eak = loading(date1,date2)
 
 
 st.dataframe(eak.head(5),height=600,use_container_width=True)

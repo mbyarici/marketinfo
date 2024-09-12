@@ -139,6 +139,7 @@ date1 = st.date_input('Gün 1',value=date.today())
 date1 = datetime.datetime(date1.year, date1.month, date1.day).replace(hour=0, minute=0, second=0)
 local_timezone = pytz.timezone('Europe/Istanbul')
 date1 = date1.astimezone(local_timezone)
+date1.replace(hour=0)
 date1 = date1.strftime("%Y-%m-%dT%H:%M:%S%z")
 date1 = date1[:19] + date1[-5:-2] + ":" + date1[-2:]
 

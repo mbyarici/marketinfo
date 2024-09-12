@@ -157,7 +157,7 @@ print("döngü")
 eak=pd.DataFrame()
 for i in eaklist['organizationId']:
     temporg=eaklist[eaklist['organizationId']==i]
-    
+    st.write(date1," - ",date2)
     payload = {
             "startDate": date1,
             "endDate": date2,
@@ -214,6 +214,7 @@ for i in eaklist['organizationId']:
         temp_eak=temp_eak.merge(temporg, how='left',on=['organizationId'])
         eak=pd.concat([eak, temp_eak])
     print(str(i)+" eak")
+    st.info(eak.head(3))
     sleep(1)
 
 

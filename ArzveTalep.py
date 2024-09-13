@@ -87,9 +87,6 @@ local_timezone = pytz.timezone('Europe/Istanbul')
 # Convert the datetime object to your local time zone (optional)
 date1 = selected_datetime.astimezone(local_timezone)
 
-# Format the date string with time zone offset
-#date1 = selected_datetime_local.strftime("%Y-%m-%dT%H:%M:%S%z")
-#date1 = date1[:19] + date1[-5:-2] + ":" + date1[-2:]
 
 print(date1)
 
@@ -232,5 +229,138 @@ st.download_button(
    key='download-PTF'
 )
 
+#%%
+#tablolar
 
+#%%
+# Format the date string with time zone offset
+date1 = date1.strftime("%Y-%m-%dT%H:%M:%S%z")
+date1 = date1[:19] + date1[-5:-2] + ":" + date1[-2:]
+payload = {"startDate": date1, "endDate": date1 }
+
+#%%blok buy
+block_buy_url = "https://seffaflik.epias.com.tr/electricity-service/v1/markets/dam/data/amount-of-block-buying"
+blok_resp_buy = req.post(block_buy_url, json=payload, headers=headers)
+df_blok_buy=pd.DataFrame(blok_resp_buy.json()["items"])
+df_blok_buy["date"]=pd.to_datetime(df_blok_buy["date"].str[0:-3], format='%Y-%m-%dT%H:%M:%S.%f')
+df_blok_buy["date"]=df_blok_buy["date"].dt.tz_localize(None)
+
+#%% block sale
+block_sale_url= "https://seffaflik.epias.com.tr/electricity-service/v1/markets/dam/data/amount-of-block-selling"
+blok_resp_sale = req.post(block_sale_url, json=payload, headers=headers)
+df_blok_sale=pd.DataFrame(blok_resp_sale.json()["items"])
+df_blok_sale["date"]=pd.to_datetime(df_blok_sale["date"].str[0:-3], format='%Y-%m-%dT%H:%M:%S.%f')
+df_blok_sale["date"]=df_blok_sale["date"].dt.tz_localize(None)
+
+#%%
+#
+#supply
+#
+#%%
+suply_pv=pd.pivot_table(suplydemand, values='supply', index=['price'], columns=['hour'], aggfunc=np.mean)
+suply_pv=suply_pv.interpolate(method='index')#fark interpolasyonları bul #deneme2=x.interpolate(method='values')#aynısı
+
+#%%
+suplysummery=pd.DataFrame()
+suplysummery['FBS']=suply_pv.iloc[0]*-1
+suplysummery['FBS']=suplysummery['FBS']-df_blok_sale['amountOfSalesTowardsMatchedBlock']
+suplysummery['BlokEşleşme']=df_blok_sale['amountOfSalesTowardsMatchedBlock']
+
+#%%
+suply_diff=-suply_pv+suply_pv.shift(1, axis = 0)
+suply_diff.iloc[0]=suply_pv.iloc[0]*-1
+suply_diff=suply_diff.round(0).astype(int)
+suply_diff["price_level"]=suply_diff.index# indexteki fiyat kolona yaz
+
+#%%
+suplysummery['0-300TL']=suply_diff[(suply_diff['price_level'] > 0) & (suply_diff['price_level'] <= 300)].sum()
+suplysummery['300-600TL']=suply_diff[(suply_diff['price_level'] > 300) & (suply_diff['price_level'] <= 600)].sum()
+suplysummery['600-1000']=suply_diff[(suply_diff['price_level'] > 600) & (suply_diff['price_level'] <= 1000)].sum()
+suplysummery['1000-1500TL']=suply_diff[(suply_diff['price_level'] > 1000) & (suply_diff['price_level'] <= 1500)].sum()
+suplysummery['1500-1750TL']=suply_diff[(suply_diff['price_level'] > 1500) & (suply_diff['price_level'] <= 1750)].sum()
+suplysummery['1750-2000TL']=suply_diff[(suply_diff['price_level'] > 1750) & (suply_diff['price_level'] <= 2000)].sum()
+suplysummery['2000-2250']=suply_diff[(suply_diff['price_level'] > 2000) & (suply_diff['price_level'] <= 2250)].sum()
+suplysummery['2250-2500']=suply_diff[(suply_diff['price_level'] > 2250) & (suply_diff['price_level'] <= 2500)].sum()
+suplysummery['2500-3000']=suply_diff[(suply_diff['price_level'] > 2500) & (suply_diff['price_level'] <= 3000)].sum()
+suplysummery.iloc[:,0:2]=suplysummery.iloc[:,0:2].round(0)
+
+#%%
+st.dataframe(suplysummery,height=600,use_container_width=True)
+st.download_button(
+   "Arz İndir",
+   suplysummery.to_csv(sep=";", decimal=",").encode('utf-8-sig'),
+   "Arz Tablo.csv",
+   "text/csv",
+   key='download-ArzTablo'
+)
+
+
+#%%
+#
+#demand
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+demand_pv=pd.pivot_table(suplydemand, values='demand', index=['price'], columns=['hour'], aggfunc=np.mean)
+demand_pv=demand_pv.interpolate(method='index')
+
+#%%
+demand_diff=demand_pv.shift(1, axis = 0)-demand_pv
+demand_diff.iloc[0]=demand_pv.iloc[0]
+demand_diff=demand_diff.round(0).astype(int)
+demand_diff["price_level"]=demand_diff.index# indexteki fiyat kolona yaz
+
+#%%
+
+demandsummery=pd.DataFrame()
+demandsummery['MaksAlış']=demand_diff.iloc[0]
+
+demandsummery['0-600TL']=demand_diff[(demand_diff['price_level'] > 0) & (demand_diff['price_level'] <= 600)].sum()
+demandsummery['600-1000TL']=demand_diff[(demand_diff['price_level'] > 600) & (demand_diff['price_level'] <= 1000)].sum()
+demandsummery['1000-1250TL']=demand_diff[(demand_diff['price_level'] > 1000) & (demand_diff['price_level'] <= 1250)].sum()
+demandsummery['1250-1500TL']=demand_diff[(demand_diff['price_level'] > 1250) & (demand_diff['price_level'] <= 1500)].sum()
+demandsummery['1500-1750TL']=demand_diff[(demand_diff['price_level'] > 1500) & (demand_diff['price_level'] <= 1750)].sum()
+demandsummery['1750-2000TL']=demand_diff[(demand_diff['price_level'] > 1750) & (demand_diff['price_level'] <= 2000)].sum()
+demandsummery['2000-2250TL']=demand_diff[(demand_diff['price_level'] > 2000) & (demand_diff['price_level'] <= 2250)].sum()
+demandsummery['2250-2500TL']=demand_diff[(demand_diff['price_level'] > 2250) & (demand_diff['price_level'] <= 2500)].sum()
+demandsummery['2500-2750TL']=demand_diff[(demand_diff['price_level'] > 2500) & (demand_diff['price_level'] <= 2750)].sum()
+demandsummery['2750TL Üzeri']=demand_diff[(demand_diff['price_level'] > 2750) ].sum()
+demandsummery.drop('price_level',inplace=True)
+
+st.dataframe(demandsummery,height=600,use_container_width=True)
+st.download_button(
+   "Talep İndir",
+   demandsummery.to_csv(sep=";", decimal=",").encode('utf-8-sig'),
+   "Talep Tablo.csv",
+   "text/csv",
+   key='download-TalepTablo'
+)
 

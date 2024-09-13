@@ -23,8 +23,6 @@ import requests as req
 import pytz
 from time import sleep
 
-
-
 #%%sayfa düzeni
 hide_st_style = """
             <style>
@@ -36,7 +34,6 @@ hide_st_style = """
 st.set_page_config(page_title="EAK", page_icon=":chart_with_upwards_trend:", layout="wide")
 
 st.markdown(hide_st_style, unsafe_allow_html=True)
-#%%
 
 #%%cash
 @st.cache_data
@@ -73,13 +70,11 @@ def loading(date1,date2):
                 current_datetime = date1.replace(hour=hour)
                 current_datetime = current_datetime.strftime("%Y-%m-%dT%H:%M:%S%z")
                 current_datetime = current_datetime[:19] + current_datetime[-5:-2] + ":" + current_datetime[-2:]
-                
-                
                 payload = {"date": current_datetime}
                 sleep(1)
                 print(payload)
                 resp1 = req.post(suplydemand_url,json=payload, headers=headers, timeout=15)
-                st.write(payload)
+                st.write(current_datetime)
                 hourdata=pd.DataFrame(resp1.json()["items"])
                 suplydemand = pd.concat([suplydemand, hourdata], ignore_index=True)
     
@@ -117,15 +112,8 @@ def loading(date1,date2):
         date1 += timedelta(days=1)
         print(date1)
 
-
-
-
-
     sleep(1)  
     return all_data    
-
-
-
 
 #%%tarih seç date1
 yesterday = datetime.date.today() - datetime.timedelta(days=1)
@@ -134,8 +122,6 @@ date1 = datetime.datetime(date1.year, date1.month, date1.day).replace(hour=0, mi
 local_timezone = pytz.timezone('Europe/Istanbul')
 date1 = date1.astimezone(local_timezone)
 date1=date1.replace(hour=0)
-#date1 = date1.strftime("%Y-%m-%dT%H:%M:%S%z")
-#date1 = date1[:19] + date1[-5:-2] + ":" + date1[-2:]
 
 #%%date2
 
@@ -144,8 +130,6 @@ date2 = datetime.datetime(date2.year, date2.month, date2.day, 0, 0, 0)
 local_timezone = pytz.timezone('Europe/Istanbul')
 date2 = date2.astimezone(local_timezone)
 date2=date2.replace(hour=0)
-#date2 = date2.strftime("%Y-%m-%dT%H:%M:%S%z")
-#date2 = date2[:19] + date2[-5:-2] + ":" + date2[-2:]
 
 # Define the URL endpoints
 suplydemand_url = "https://seffaflik.epias.com.tr/electricity-service/v1/markets/dam/data/supply-demand"
@@ -171,16 +155,6 @@ except Exception as e:
 headers = {"TGT": tgt, "Content-Type": "application/json", "Accept": "application/json" }
 
 #%%
-# Convert the start and end dates to datetime objects
-#current_date = datetime.datetime.strptime(date1, "%Y-%m-%dT%H:%M:%S%z")
-
-#current_date = current_date.replace(hour=0, minute=0, second=0)
-
-
-#%%
-
-#end_date = datetime.datetime.strptime(date2, "%Y-%m-%dT%H:%M:%S%z")
-#end_date = end_date.replace(hour=0, minute=0, second=0)
 
 all_data = loading(date1,date2)
 

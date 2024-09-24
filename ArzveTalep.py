@@ -77,7 +77,6 @@ print("push")
 date1 = st.date_input('Baz gün',value=date.today())
 print(date1)
 
-
 # Create a datetime object with the selected date and desired time (00:00:00)
 selected_datetime = datetime.datetime(date1.year, date1.month, date1.day, 0, 0, 0)
 
@@ -86,7 +85,6 @@ local_timezone = pytz.timezone('Europe/Istanbul')
 
 # Convert the datetime object to your local time zone (optional)
 date1 = selected_datetime.astimezone(local_timezone)
-
 
 print(date1)
 
@@ -114,8 +112,6 @@ headers = {
         "Content-Type": "application/json",
         "Accept": "application/json"
     }
-
-
 
 #%%
 
@@ -216,8 +212,6 @@ for row in range(num_rows):
                 #st.write(edited_df.loc[0,'saat'+str(hour_data["hour"].iloc[0])])
                 st.plotly_chart(fig)
  
-
-
 #col1
             
 st.dataframe(ptf_df,height=880)                
@@ -294,41 +288,10 @@ st.download_button(
    key='download-ArzTablo'
 )
 
-
 #%%
 #
 #demand
 #
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 demand_pv=pd.pivot_table(suplydemand, values='demand', index=['price'], columns=['hour'], aggfunc=np.mean)
 demand_pv=demand_pv.interpolate(method='index')
 
@@ -339,7 +302,6 @@ demand_diff=demand_diff.round(0).astype(int)
 demand_diff["price_level"]=demand_diff.index# indexteki fiyat kolona yaz
 
 #%%
-
 demandsummery=pd.DataFrame()
 demandsummery['MaksAlış']=demand_diff.iloc[0]
 
@@ -363,4 +325,21 @@ st.download_button(
    "text/csv",
    key='download-TalepTablo'
 )
+
+#%%
+diff_pv=pd.pivot_table(suplydemand, values='kesisim', index=['price'], columns=['hour'], aggfunc=np.mean)
+diff_pv=diff_pv.interpolate(method='index')#fark interpolasyonları bul #deneme2=x.interpolate(method='values')#aynısı  
+
+st.download_button(
+   "Fark İndir",
+   diff_pv.to_csv(sep=";", decimal=",").encode('utf-8-sig'),
+   "Fark.csv",
+   "text/csv",
+   key='download-FarkTablo'
+)
+
+
+
+
+
 

@@ -329,6 +329,9 @@ st.download_button(
 #%%
 diff_pv=pd.pivot_table(suplydemand, values='kesisim', index=['price'], columns=['hour'], aggfunc=np.mean)
 diff_pv=diff_pv.interpolate(method='index')#fark interpolasyonları bul #deneme2=x.interpolate(method='values')#aynısı  
+diff_pv=diff_pv.round(2)
+#diff_pv.iloc[:,0:24]=diff_pv.iloc[:,0:24].round(2)
+#%%
 
 st.download_button(
    "Fark İndir",

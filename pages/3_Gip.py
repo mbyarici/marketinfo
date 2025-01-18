@@ -84,14 +84,7 @@ gipakis_df["date"] = gipakis_df["date"].str.split(".", n=1).str[0]#?
 
 gipakis_df["date"] = pd.to_datetime(gipakis_df["date"], format='%Y-%m-%dT%H:%M:%S%z')
 
-
 gipakis_df["date"]=gipakis_df["date"].dt.tz_localize(None)
-
-#gipakis_df["date"]=pd.to_datetime(gipakis_df["date"].str[0:-3], format='%Y-%m-%dT%H:%M:%S.%f')
-#gipakis_df["date"]=gipakis_df["date"].dt.tz_localize(None)
-
-#gipakis_df.drop(columns = ['hour'],inplace=True)
-#gipakis_df.rename(columns ={'price':'PTF'},inplace=True)
 
 #%%
 def convert_date(df):
@@ -145,19 +138,62 @@ def calculate_averages(df):
 
     return pd.DataFrame(results)
 #%%
-
 df_with_averages = calculate_averages(gipakis_df)
+
 #%%
 
 gipakis_df = gipakis_df.merge(df_with_averages[["contractName","minavg","maxavg"]], on='contractName', how='left') 
-
-#%%
 gipakis_df = gipakis_df.sort_values(by='Kontrat', ascending=True)
-grafik=gipakis_df[gipakis_df['Kontrat'].dt.date == filtre]
+#%%
+url_ptf="https://seffaflik.epias.com.tr/electricity-service/v1/markets/dam/data/mcp"
+payload = {
+        "startDate": date1,
+        "endDate": date2
+    }
+
+ptf_resp=req.post(url_ptf,json=payload, headers=headers, timeout=10)
+df_ptf=pd.DataFrame(ptf_resp.json()["items"])
+
+#df_ptf["date"] = df_ptf["date"].str.split(".", n=1).str[0]
+df_ptf["date"] = pd.to_datetime(df_ptf["date"], format='%Y-%m-%dT%H:%M:%S%z')
+
+df_ptf["date"]=df_ptf["date"].dt.tz_localize(None)
+
+df_ptf.rename(columns={'date': 'Kontrat','price':'PTF'}, inplace=True)
+
+gipakis_df=gipakis_df.merge(df_ptf[['Kontrat','PTF']], how='left',on=['Kontrat'])
 
 #%%
 
-grafik=grafik[["date","price","quantity","Kontrat","minavg","maxavg"]]
+url_yal="https://seffaflik.epias.com.tr/electricity-service/v1/markets/bpm/data/order-summary-up"
+url_yat="https://seffaflik.epias.com.tr/electricity-service/v1/markets/bpm/data/order-summary-down"
+url_yon="https://seffaflik.epias.com.tr/electricity-service/v1/markets/bpm/data/system-direction"
+
+payload = {
+        "startDate": date1,
+        "region": "TR1",
+        "endDate": date2
+    }
+yal_resp=req.post(url_yal,json=payload, headers=headers, timeout=10)
+df_Yal=pd.DataFrame(yal_resp.json()["items"])
+df_Yal["date"] = pd.to_datetime(df_Yal["date"], format='%Y-%m-%dT%H:%M:%S%z')
+df_Yal["date"]=df_Yal["date"].dt.tz_localize(None)
+df_Yal.rename(columns={'date': 'merge'}, inplace=True)
+df_Yal["merge"]=df_Yal["merge"]+pd.to_timedelta(1, unit='H')
+
+yon_resp=req.post(url_yon,json=payload, headers=headers, timeout=10)
+df_Yon=pd.DataFrame(yon_resp.json()["items"])
+df_Yon["date"] = pd.to_datetime(df_Yon["date"], format='%Y-%m-%dT%H:%M:%S%z')
+df_Yon["date"]=df_Yon["date"].dt.tz_localize(None)
+df_Yon.rename(columns={'date': 'merge'}, inplace=True)
+#%%
+df_Yal.drop(columns=['hour', 'upRegulationZeroCoded', 'upRegulationOneCoded', 'upRegulationTwoCoded','upRegulationDelivered'], inplace=True)
+
+#%%
+gipakis_df['merge']= gipakis_df['date'].dt.floor('H') #saate yuvarlama
+gipakis_df=gipakis_df.merge(df_Yal[['merge','net']], how='left',on=['merge'])
+grafik=gipakis_df[gipakis_df['Kontrat'].dt.date == filtre]
+grafik=grafik[["date","price","quantity","Kontrat","minavg","maxavg","PTF","net"]]
 
 #%%
 
@@ -175,24 +211,23 @@ for row in range(num_rows):
         idx = row * num_cols + col_idx
         if idx < len(unique_hours):
             hour = unique_hours[idx]
-            #hour_data = grafik[grafik['Kontrat'].dt.hour == hour]
             hour_data = grafik[grafik['Kontrat'].dt.hour == hour].sort_values('date')
 
             with cols[col_idx]:
                 fig = go.Figure()
 
                 # Fiyat için çizgi grafiği (birinci y ekseni)
-                fig.add_trace(go.Scatter(x=hour_data['date'], y=hour_data['price'], mode='lines+markers', name='Fiyat (TL/MWh)', yaxis='y1'))
-                
+                fig.add_trace(go.Scatter(x=hour_data['date'], y=hour_data['price'], mode='lines+markers', name='Fiyat (TL/MWh)', yaxis='y1'))               
                 # minavg için düz çizgi
                 fig.add_trace(go.Scatter(x=hour_data['date'], y=hour_data['minavg'], mode='lines', name='Min. Ortalama', yaxis='y1', line=dict(color='green', dash='dash')))
-
                 # maxavg için düz çizgi
                 fig.add_trace(go.Scatter(x=hour_data['date'], y=hour_data['maxavg'], mode='lines', name='Max. Ortalama', yaxis='y1', line=dict(color='red', dash='dash')))
-
+                # PTF için düz çizgi
+                fig.add_trace(go.Scatter(x=hour_data['date'], y=hour_data['PTF'], mode='lines', name='PTF', yaxis='y1', line=dict(color='black')))
+                # Yön
+                fig.add_trace(go.Scatter(x=hour_data['date'], y=hour_data['net'], mode='lines', name='Yön(MWh)', yaxis='y2', line=dict(color='yellow')))
                 # Miktar için sütun grafiği (ikinci y ekseni)
-                fig.add_trace(go.Bar(x=hour_data['date'], y=hour_data['quantity'], name='Miktar (MWh)', yaxis='y2'))
-
+                fig.add_trace(go.Bar(x=hour_data['date'], y=hour_data['quantity'], name='Miktar (LOT)', yaxis='y2'))
                 # Çift y ekseni ayarları
                 fig.update_layout(
                     title=f"Saat {hour} Verileri",
@@ -203,15 +238,8 @@ for row in range(num_rows):
                         overlaying="y",
                         side="right"
                     ),
-                    legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5) # Legendi grafiğin altına taşır.
+                    legend=dict(orientation="h", yanchor="bottom", y=-0.4, xanchor="center", x=0.5) # Legendi grafiğin altına taşır.
                 )
                 fig.update_layout(height=400) #yükseklik ayarı
                 st.plotly_chart(fig,use_container_width=True)
-
-#%%
-
-#gipakis_df.iloc[:,6:8]=gipakis_df.iloc[:,6:8].round(2)
-#gipakis_df.to_csv("islem.csv",encoding='utf-8-sig',sep=";", decimal="," ,index=None,) #  
-
-#%%
 

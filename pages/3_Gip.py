@@ -23,7 +23,22 @@ import requests as req
 import pytz
 from time import sleep
 
-st.set_page_config(layout="wide")
+
+st.set_page_config(
+    page_title="Gip İşlem Akışı",
+    page_icon=":chart_with_upwards_trend:",
+    layout="wide",
+    initial_sidebar_state="collapsed" # Kenar çubuğunu da kapalı başlatmak isterseniz
+)
+
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 #%%
 auth_url = "https://giris.epias.com.tr/cas/v1/tickets"  # TGT almak için kullanacağınız URL

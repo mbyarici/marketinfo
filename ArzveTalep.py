@@ -25,16 +25,21 @@ import pytz
 from time import sleep
 
 #%%sayfa düzeni
-hide_st_style = """
+st.set_page_config(
+    page_title="Arz - Talep",
+    page_icon=":chart_with_upwards_trend:",
+    layout="wide",
+    initial_sidebar_state="collapsed" # Kenar çubuğunu da kapalı başlatmak isterseniz
+)
+
+hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
             header {visibility: hidden;}
             </style>
             """
-st.set_page_config(page_title="Arz -Talep", page_icon=":chart_with_upwards_trend:", layout="wide")
-
-st.markdown(hide_st_style, unsafe_allow_html=True)
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 print("push") 
 #%%arz talep cash

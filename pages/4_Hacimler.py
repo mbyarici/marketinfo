@@ -25,7 +25,7 @@ import pytz
 from time import sleep
 
 st.set_page_config(
-    page_title="Eşleşme",
+    page_title="Gip Eşleşme",
     page_icon=":chart_with_upwards_trend:",
     layout="wide",
     initial_sidebar_state="collapsed" # Kenar çubuğunu da kapalı başlatmak isterseniz

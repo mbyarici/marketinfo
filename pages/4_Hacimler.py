@@ -72,7 +72,7 @@ def loading(date1,date2):
                                   
             tumorg=pd.concat([tumorg, temp_volume])
             print(str(i)+" gip")
-            st.write(temp_volume["organizationId"])
+            st.write(str(i))
   
     return tumorg    
 

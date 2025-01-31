@@ -24,16 +24,21 @@ import requests as req
 import pytz
 from time import sleep
 
-hide_st_style = """
+st.set_page_config(
+    page_title="Eşleşme",
+    page_icon=":chart_with_upwards_trend:",
+    layout="wide",
+    initial_sidebar_state="collapsed" # Kenar çubuğunu da kapalı başlatmak isterseniz
+)
+
+hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
             header {visibility: hidden;}
             </style>
             """
-st.set_page_config(page_title="EAK", page_icon=":chart_with_upwards_trend:", layout="wide")
-
-st.markdown(hide_st_style, unsafe_allow_html=True)
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 #%%cash
 @st.cache_data
@@ -72,8 +77,6 @@ def loading(date1,date2):
                                   
             tumorg=pd.concat([tumorg, temp_volume])
             print(str(i)+" gip")
-            if i/75==0:
-                st.write(str(i)+" gip")
   
     return tumorg    
 
@@ -174,10 +177,10 @@ satisdata=filtered_data[["Katılımcı","Satış Miktarı"]]
 col1, col2 = st.columns(2)
 
 with col1:
-    st.dataframe(alısdata,height=500)
+    st.dataframe(alısdata,use_container_width=True)
 
 with col2:
-    st.dataframe(satisdata,height=500)
+    st.dataframe(satisdata,use_container_width=True)
 
 st.download_button(
    "Veri İndir",

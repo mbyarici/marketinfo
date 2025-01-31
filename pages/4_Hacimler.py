@@ -72,7 +72,8 @@ def loading(date1,date2):
                                   
             tumorg=pd.concat([tumorg, temp_volume])
             print(str(i)+" gip")
-            st.write(str(i)+" gip")
+            if i/75==0:
+                st.write(str(i)+" gip")
   
     return tumorg    
 
@@ -93,7 +94,6 @@ date2=slctd_dt
 
 datename=date1[:10]
 
-
 #%%
 auth_url = "https://giris.epias.com.tr/cas/v1/tickets"  # TGT almak için kullanacağınız URL
 auth_payload = "username=mustafayarici@embaenergy.com&password=Seffaf.3406"
@@ -108,9 +108,6 @@ except Exception as e:
     print("TGT alma hatası:", e)
     tgt = None  # TGT alınamazsa devam edemeyiz
 headers = {"TGT": tgt, "Content-Type": "application/json", "Accept": "application/json" }
-
-
-
 
 #%%
 pktur_url="https://seffaflik.epias.com.tr/electricity-service/v1/markets/general-data/data/market-participants"
@@ -129,11 +126,6 @@ pkeslesme_url="https://seffaflik.epias.com.tr/electricity-service/v1/markets/idm
 tumorg=loading(date1,date2)
 
 tumorg.reset_index(drop=True, inplace=True)
-
-#%%
-
-
-
 
 #%%
 
@@ -158,6 +150,8 @@ giplist.rename(columns ={'id':'organizationId'},inplace=True)
 #gipeslesme['Tarih'] = pd.to_datetime(gipeslesme['Tarih'])
 gipeslesme=gipeslesme.merge(giplist[['organizationId','orgName']], how='left',on=['organizationId'])
 
+
+gipeslesme.rename(columns ={'orgName':'Katılımcı','clearingQuantityAsk':'Alış Miktarı','clearingQuantityBid':'Satış Miktarı',},inplace=True)
 #%%
 
 selected_hour = st.selectbox('Saat Seçiniz',  range(24), index=0)
@@ -169,12 +163,26 @@ filtered_data = gipeslesme[ (gipeslesme['Tarih'].dt.hour == selected_hour) ]
 #tabledata=filtered_data.copy()
 #filtered_data=filtered_data.loc[:, (filtered_data != 0).any(axis=0)]
 
-alısdata=filtered_data[["clearingQuantityAsk","orgName"]]
-alısdata.rename(columns ={'clearingQuantityAsk':'Alış Miktarı','orgName':'Katılımcı'},inplace=True)
+alısdata=filtered_data[["Katılımcı","Alış Miktarı"]]
+#alısdata.rename(columns ={'clearingQuantityAsk':'Alış Miktarı','orgName':'Katılımcı'},inplace=True)
 
-st.dataframe(alısdata,height=880)  
 #%%
-satisdata=filtered_data[["clearingQuantityBid","orgName"]]
-satisdata.rename(columns ={'clearingQuantityBid':'Satış Miktarı','orgName':'Katılımcı'},inplace=True)
+satisdata=filtered_data[["Katılımcı","Satış Miktarı"]]
 
-st.dataframe(satisdata,height=880)   
+
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.dataframe(alısdata,height=500)
+
+with col2:
+    st.dataframe(satisdata,height=500)
+
+st.download_button(
+   "Veri İndir",
+   gipeslesme.to_csv(sep=";", decimal=",",index=False).encode('utf-8-sig'),
+   "Eslesme.csv",
+   "text/csv",
+   key='download-Eslesme'
+)

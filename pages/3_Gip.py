@@ -42,7 +42,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 #%%
 auth_url = "https://giris.epias.com.tr/cas/v1/tickets"  # TGT almak için kullanacağınız URL
-auth_payload = "username=mustafayarici@embaenergy.com&password=Seffaf.3406"
+auth_payload = "username=mustafayarici@embaenergy.com&password=Seffaf.0634"
 auth_headers = {"Content-Type": "application/x-www-form-urlencoded","Accept": "text/plain"}
 # TGT isteğini yap
 try:
